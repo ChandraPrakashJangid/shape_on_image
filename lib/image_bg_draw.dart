@@ -91,6 +91,7 @@ class ImageEditor extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawImage(image,  Offset(0.0, 0.0),  Paint());
+//    canvas.drawColor(Colors.re, BlendMode.color);
     for(Offset offset in points){
       canvas.drawCircle(offset, 10, painter);
     }

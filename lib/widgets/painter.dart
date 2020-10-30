@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 typedef ImageSaveCallback = void Function(Picture picture);
 
 class PainterCanvas extends CustomPainter {
-  ui.Image image;
   List<PaintedPoints> pointsList;
   List<PaintedSquires> squaresList;
   PaintedSquires unfinishedSquare;
@@ -21,6 +20,8 @@ class PainterCanvas extends CustomPainter {
 
   bool saveImage;
 
+  ui.Image bgImage;
+
   PainterCanvas(
       {this.pointsList,
       this.squaresList,
@@ -29,43 +30,19 @@ class PainterCanvas extends CustomPainter {
       this.unfinishedCircle,
       this.saveImage,
       this.saveCallback,
-      this.image});
-
-
-  Future <Null> init() async {
-    final ByteData data = await rootBundle.load('assets/images/sign-neon.png');
-    image = await loadImage( Uint8List.view(data.buffer));
-    addItems(image);
-  }
-
-  Future<ui.Image> loadImage(List<int> img) async {
-    final Completer<ui.Image> completer =  Completer();
-    ui.decodeImageFromList(img, (ui.Image img) {
-      return completer.complete(img);
-    });
-    return completer.future;
-  }
+      this.bgImage});
 
   List<Offset> offsetPoints = List();
 
-  List<ui.Image> items = new List<ui.Image>();
-
-  void addItems(ui.Image item) {
-    items.add(item);
-  }
-
   @override
   void paint(Canvas canvas, Size size) {
-    init();
-
     final recorder = ui.PictureRecorder();
     if (saveImage) {
       canvas = Canvas(recorder);
     }
-    for (ui.Image item in items) {
-      canvas.drawImage(item, new Offset(50.0, 50.0), new Paint());
-    }
-    canvas.drawColor(Colors.white, BlendMode.color);
+    canvas.drawImage(bgImage,  Offset(0.0, 0.0),  Paint());
+
+//    canvas.drawColor(Colors.white, BlendMode.color);
 
     for (int i = 0; i < pointsList.length - 1; i++) {
       if (pointsList[i] != null && pointsList[i + 1] != null) {

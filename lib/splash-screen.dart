@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'dart:async';
 
+import 'image_bg_draw.dart';
+import 'paint95.dart';
 import 'paint95.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -50,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Container(
             width: 400,
             child: Center(
-              child: Image.asset('assets/images/logo.jpeg'),
+              child: Text('Demo App'),
             ),
           ),
           Spacer(),
@@ -58,15 +60,15 @@ class _SplashScreenState extends State<SplashScreen> {
           SizedBox(
             height: 10,
           ),
-          Center(
-            child: Text(
-              "Loading..",
-              style: Theme.of(context)
-                  .textTheme
-                  .headline6
-                  .apply(color: Colors.black),
-            ),
-          ),
+//          Center(
+//            child: Text(
+//              "Loading..",
+//              style: Theme.of(context)
+//                  .textTheme
+//                  .headline6
+//                  .apply(color: Colors.black),
+//            ),
+//          ),
           Spacer(),
         ],
       ),

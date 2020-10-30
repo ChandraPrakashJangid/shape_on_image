@@ -16,6 +16,7 @@ import 'dart:ui';
 
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -30,7 +31,7 @@ class ClassicPaint extends StatefulWidget {
   _ClassicPaintState createState() => _ClassicPaintState();
 }
 
-enum enumToolTypes { pencil, eraser, rectangle, circle, text }
+enum enumToolTypes { pencil, eraser, rectangle, circle, text, rollback,  }
 
 class ToolIconsData {
   IconData icon;
@@ -63,17 +64,27 @@ class _ClassicPaintState extends State<ClassicPaint> {
     ToolIconsData(FontAwesomeIcons.eraser, enumToolTypes.eraser),
     ToolIconsData(Icons.crop_square, enumToolTypes.rectangle),
     ToolIconsData(Icons.radio_button_unchecked, enumToolTypes.circle),
+    ToolIconsData(Icons.refresh, enumToolTypes.rollback),
+    ToolIconsData(Icons.radio_button_unchecked, enumToolTypes.circle),
     //ToolIconsData(Icons.text_fields, enumToolTypes.text), //TODO
   ];
 
   ui.Image image;
   bool isImageloaded = false;
-  GlobalKey _myCanvasKey = new GlobalKey();
+
+  void initState() {
+    super.initState();
+    init();
+  }
 
   Future <Null> init() async {
-    final ByteData data = await rootBundle.load('assets/images/sign-neon.png');
-    image = await loadImage( Uint8List.view(data.buffer));
-
+    try{
+      final ByteData data = await rootBundle.load('assets/images/sign-neon.png');
+      image = await loadImage( Uint8List.view(data.buffer));
+      print('----Image Loaded----');
+    }catch(e){
+      print('got an error to load image -- $e');
+    }
   }
 
   Future<ui.Image> loadImage(List<int> img) async {
@@ -87,13 +98,14 @@ class _ClassicPaintState extends State<ClassicPaint> {
     return completer.future;
   }
 
+
   Paint getPoint() {
     if (selectedTool == enumToolTypes.eraser) {
       return Paint()
         ..strokeCap = strokeType
         ..isAntiAlias = true
         ..strokeWidth = strokeWidth
-        ..color = Colors.white;
+        ..color = Colors.transparent;
     } else {
       return Paint()
         ..strokeCap = strokeType
@@ -142,33 +154,33 @@ class _ClassicPaintState extends State<ClassicPaint> {
                     },
                     child: MenuItem("Save"),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (drawHistory.length > 0) {
-                          enumToolTypes lastAction = drawHistory.last;
-                          if (lastAction == enumToolTypes.eraser ||
-                              lastAction == enumToolTypes.pencil) {
-                            if (paintedPoints.length > 0) {
-                              RecordPaints lastPoint = paintedPoints.last;
-
-                              if (lastPoint.endIndex != null)
-                                pointsList.removeRange(
-                                    lastPoint.startIndex, lastPoint.endIndex);
-                              paintedPoints.removeLast();
-                            }
-                          } else if (lastAction == enumToolTypes.rectangle) {
-                            squaresList.removeLast();
-                          } else {
-                            circleList.removeLast();
-                          }
-                          drawHistory.removeLast();
-                        }
-                        //pointsListDeleted.;
-                      });
-                    },
-                    child: MenuItem("Undo"),
-                  ),
+//                  GestureDetector(
+//                    onTap: () {
+//                      setState(() {
+//                        if (drawHistory.length > 0) {
+//                          enumToolTypes lastAction = drawHistory.last;
+//                          if (lastAction == enumToolTypes.eraser ||
+//                              lastAction == enumToolTypes.pencil) {
+//                            if (paintedPoints.length > 0) {
+//                              RecordPaints lastPoint = paintedPoints.last;
+//
+//                              if (lastPoint.endIndex != null)
+//                                pointsList.removeRange(
+//                                    lastPoint.startIndex, lastPoint.endIndex);
+//                              paintedPoints.removeLast();
+//                            }
+//                          } else if (lastAction == enumToolTypes.rectangle) {
+//                            squaresList.removeLast();
+//                          } else {
+//                            circleList.removeLast();
+//                          }
+//                          drawHistory.removeLast();
+//                        }
+//                        //pointsListDeleted.;
+//                      });
+//                    },
+//                    child: MenuItem("Undo"),
+//                  ),
                   GestureDetector(
                     onTap: () {
                       setState(() {
@@ -331,47 +343,31 @@ class _ClassicPaintState extends State<ClassicPaint> {
                                 //Canvas
 //                                color: Colors.red,
                                 //margin: EdgeInsets.only(bottom: 50, right: 80),
-                                child: CustomPaint(
+                                child: this.isImageloaded
+                                    ? CustomPaint(
                                   size: Size(
                                       constraints.widthConstraints().maxWidth,
                                       constraints
                                           .heightConstraints()
                                           .maxHeight),
                                   painter: PainterCanvas(
-                                    pointsList: pointsList,
-                                    squaresList: squaresList,
-                                    circlesList: circleList,
-                                    unfinishedSquare: unfinishedSquare,
-                                    unfinishedCircle: unfinishedCircle,
-                                    saveImage: saveClicked,
-                                    saveCallback: (Picture picture) async {
-                                      var status =
-                                          await Permission.storage.status;
-                                      if (!status.isGranted) {
-                                        await Permission.storage.request();
-                                      }
-                                      if (status.isGranted) {
-                                        final img = await picture.toImage(
-                                            constraints.maxWidth.round(),
-                                            constraints.maxHeight.round());
-                                        final bytes = await img.toByteData(
-                                            format: ImageByteFormat.png);
-                                        await ImageGallerySaver.saveImage(
-                                          Uint8List.fromList(
-                                              bytes.buffer.asUint8List()),
-                                          quality: 100,
-                                          name:
-                                              DateTime.now().toIso8601String(),
-                                        );
-                                        showToastMessage(
-                                            "Image saved to gallery.");
-                                      }
-                                      setState(() {
-                                        saveClicked = false;
-                                      });
-                                    },
-                                    image: this.image
+                                      pointsList: pointsList,
+                                      squaresList: squaresList,
+                                      circlesList: circleList,
+                                      unfinishedSquare: unfinishedSquare,
+                                      unfinishedCircle: unfinishedCircle,
+                                      saveImage: saveClicked,
+                                      saveCallback: (Picture picture) async {
+                                        saveImage(picture, constraints);
+                                      },
+                                      bgImage: this.image
                                   ),
+                                )
+                                    : Container(
+                                  height: 100,
+                                  width: 100,
+                                  color: Colors.red,
+                                  child: Text('test'),
                                 ),
                               ),
                             ),
@@ -448,30 +444,30 @@ class _ClassicPaintState extends State<ClassicPaint> {
               color: Colors.black26,
             ),
             SizedBox(),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              width: double.maxFinite,
-              color: Color(0xFFC0C0C0),
-              child: Row(
-                children: <Widget>[
-                  Text(
-                    "Thanks for using our application. Please share your feedback.",
-                    style: Theme.of(context)
-                        .textTheme
-                        .caption
-                        .copyWith(color: Colors.black),
-                  ),
-                  Spacer(),
-                  Text(
-                    "ಧನ್ಯವಾದಗಳು (Thank You).",
-                    style: Theme.of(context)
-                        .textTheme
-                        .caption
-                        .copyWith(color: Colors.black),
-                  ),
-                ],
-              ),
-            ),
+//            Container(
+//              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+//              width: double.maxFinite,
+//              color: Color(0xFFC0C0C0),
+//              child: Row(
+//                children: <Widget>[
+//                  Text(
+//                    "Thanks for using our application. Please share your feedback.",
+//                    style: Theme.of(context)
+//                        .textTheme
+//                        .caption
+//                        .copyWith(color: Colors.black),
+//                  ),
+//                  Spacer(),
+//                  Text(
+//                    "ಧನ್ಯವಾದಗಳು (Thank You).",
+//                    style: Theme.of(context)
+//                        .textTheme
+//                        .caption
+//                        .copyWith(color: Colors.black),
+//                  ),
+//                ],
+//              ),
+//            ),
           ],
         ),
       ),
@@ -493,6 +489,32 @@ class _ClassicPaintState extends State<ClassicPaint> {
                   .firstWhere((element) => element.icon == item.icon)
                   .isSelected = true;
             });
+
+//            enum enumToolTypes { pencil, eraser, rectangle, circle, text, rollback,  }
+            if(item.icon == Icons.refresh){
+              setState(() {
+                if (drawHistory.length > 0) {
+                  enumToolTypes lastAction = drawHistory.last;
+                  if (lastAction == enumToolTypes.eraser ||
+                      lastAction == enumToolTypes.pencil) {
+                    if (paintedPoints.length > 0) {
+                      RecordPaints lastPoint = paintedPoints.last;
+
+                      if (lastPoint.endIndex != null)
+                        pointsList.removeRange(
+                            lastPoint.startIndex, lastPoint.endIndex);
+                      paintedPoints.removeLast();
+                    }
+                  } else if (lastAction == enumToolTypes.rectangle) {
+                    squaresList.removeLast();
+                  } else {
+                    circleList.removeLast();
+                  }
+                  drawHistory.removeLast();
+                }
+
+              });
+            }
           },
           child: ToolIcon(
             item.icon,
@@ -683,6 +705,35 @@ class _ClassicPaintState extends State<ClassicPaint> {
       colorBox(Color.fromRGBO(120, 120, 255, 1)),
       colorBox(Color.fromRGBO(255, 120, 60, 1)),
     ];
+  }
+
+  //Save Image
+  saveImage(Picture picture, BoxConstraints constraints) async{
+    try{
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        await Permission.storage.request();
+      }
+      if (status.isGranted) {
+        final img = await picture.toImage(
+            constraints.maxWidth.round(),
+            constraints.maxHeight.round());
+        final bytes = await img.toByteData(
+            format: ImageByteFormat.png);
+        await ImageGallerySaver.saveImage(
+          Uint8List.fromList(
+              bytes.buffer.asUint8List()),
+          quality: 100,
+          name: DateTime.now().toIso8601String(),
+        );
+        showToastMessage("Image saved to gallery.");
+      }
+    }catch(e){
+      print('Image saved error --- $e');
+    }
+    setState(() {
+      saveClicked = false;
+    });
   }
 }
 
